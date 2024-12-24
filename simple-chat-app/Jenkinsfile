@@ -4,29 +4,26 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the application...'
-                // Specify the Dockerfile path
                 bat 'docker build -t websocket-chat-app simple-chat-app'
             }
         }
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Install Python dependencies and run test scripts
+                // Use full Python path if needed
                 bat 'python -m pip install requests'
-                bat 'python simple-chat-app/test_homepage.py'
-                bat 'python simple-chat-app/test_content.py'
+                bat 'python simple-chat-app\\test_homepage.py'
+                bat 'python simple-chat-app\\test_content.py'
             }
         }
         stage('Deploy') {
             steps {
                 echo 'Deploying the application...'
-                // Stop any existing containers using the image
                 bat '''
-                FOR /F "tokens=*" %%i IN ('docker ps --filter ancestor=websocket-chat-app --format "{{.ID}}"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps --filter "ancestor=websocket-chat-app" --format "{{.ID}}"') DO (
                     docker stop %%i
                 )
                 '''
-                // Run a new container
                 bat 'docker run -d -p 3000:3000 websocket-chat-app'
             }
         }
@@ -37,9 +34,8 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed. Attempting rollback...'
-            // Rollback to a previous version
             bat '''
-            FOR /F "tokens=*" %%i IN ('docker ps --filter ancestor=websocket-chat-app --format "{{.ID}}"') DO (
+            FOR /F "tokens=*" %%i IN ('docker ps --filter "ancestor=websocket-chat-app" --format "{{.ID}}"') DO (
                 docker stop %%i
             )
             '''
