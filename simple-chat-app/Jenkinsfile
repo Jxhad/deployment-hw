@@ -1,0 +1,61 @@
+pipeline {
+  agent any
+  stages {
+    stage('Build') {
+      steps {
+        echo 'Building the application...'
+        sh 'docker build -t hello-world-app .'
+      }
+    }
+    stage('Test') {
+    steps {
+        sh 'node test_websocket.js'
+      }
+    }
+    stage('Deploy') {
+      steps {
+        echo 'Deploying the application (locally)...'
+        sh 'docker run -d -p 8080:8080 hello-world-app'
+      }
+    }
+
+    steps {
+    sh 'apt-get update && apt-get install -y python3 python3-pip'
+    sh 'pip3 install requests'
+    }
+
+    //A important part is testing before deploying
+
+    //Anytime, you can rollback to the previous version
+    stage('Rollback') {
+    when {
+        expression { currentBuild.result == 'FAILURE' }
+    }
+    steps {
+        sh 'docker stop <container_id>'
+        sh 'docker run -d -p 3000:3000 websocket-chat-app'
+      }
+    } 
+
+  }
+}
+
+ stages {
+        stage('Build') {
+            steps {
+                sh 'docker build -t websocket-chat-app .'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'python3 test_homepage.py'
+                sh 'python3 test_content.py'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'docker run -d -p 3000:3000 websocket-chat-app'
+            }
+        }
+    }
+}
