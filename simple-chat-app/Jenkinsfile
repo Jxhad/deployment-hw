@@ -4,22 +4,29 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the application...'
-                bat 'docker build -t websocket-chat-app .'
+                // Specify the Dockerfile path
+                bat 'docker build -t websocket-chat-app simple-chat-app'
             }
         }
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Install Python and dependencies (adjust for Windows)
+                // Install Python dependencies and run test scripts
                 bat 'python -m pip install requests'
-                bat 'python test_homepage.py'
-                bat 'python test_content.py'
+                bat 'python simple-chat-app/test_homepage.py'
+                bat 'python simple-chat-app/test_content.py'
             }
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying the application (locally)...'
-                bat 'docker stop $(docker ps -q --filter ancestor=websocket-chat-app || true)'
+                echo 'Deploying the application...'
+                // Stop any existing containers using the image
+                bat '''
+                FOR /F "tokens=*" %%i IN ('docker ps --filter ancestor=websocket-chat-app --format "{{.ID}}"') DO (
+                    docker stop %%i
+                )
+                '''
+                // Run a new container
                 bat 'docker run -d -p 3000:3000 websocket-chat-app'
             }
         }
@@ -31,7 +38,11 @@ pipeline {
         failure {
             echo 'Pipeline failed. Attempting rollback...'
             // Rollback to a previous version
-            bat 'docker stop $(docker ps -q --filter ancestor=websocket-chat-app || true)'
+            bat '''
+            FOR /F "tokens=*" %%i IN ('docker ps --filter ancestor=websocket-chat-app --format "{{.ID}}"') DO (
+                docker stop %%i
+            )
+            '''
             bat 'docker run -d -p 3000:3000 websocket-chat-app'
         }
     }
