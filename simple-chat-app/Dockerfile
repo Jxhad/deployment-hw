@@ -1,3 +1,7 @@
+FROM jenkins/jenkins:lts
+RUN useradd -m -s /bin/bash jenkins
+USER jenkins
+
 FROM node:14-alpine
 WORKDIR /app
 COPY package*.json ./
