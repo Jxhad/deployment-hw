@@ -11,9 +11,9 @@ pipeline {
             steps {
                 echo 'Running tests...'
                 // Use full Python path if needed
-                bat 'python -m pip install requests'
-                bat 'python simple-chat-app\\test_homepage.py'
-                bat 'python simple-chat-app\\test_content.py'
+                bat 'C:\\Python311\\python.exe -m pip install requests'
+                bat 'C:\\Python311\\python.exe simple-chat-app\\test_homepage.py'
+                bat 'C:\\Python311\\python.exe simple-chat-app\\test_content.py'
             }
         }
         stage('Deploy') {
@@ -36,7 +36,7 @@ pipeline {
             echo 'Pipeline failed. Attempting rollback...'
             bat '''
             FOR /F "tokens=*" %%i IN ('docker ps --filter "ancestor=websocket-chat-app" --format "{{.ID}}"') DO (
-                docker stop %%i
+                docker stop %%i || echo No containers found
             )
             '''
             bat 'docker run -d -p 3000:3000 websocket-chat-app'
